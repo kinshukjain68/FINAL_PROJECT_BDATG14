@@ -1,0 +1,50 @@
+USE [web_scrapping]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[company](
+	[Rank] [int] NULL,
+	[Name] [varchar](max) NULL,
+	[Industry] [varchar](max) NULL,
+	[Revenue] [float] NULL,
+	[Profit] [int] NULL,
+	[NumberOfEmployees] [int] NULL,
+	[Headquaters] [varchar](max) NULL,
+	[RevenuePerEmployee] [float] NULL
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+
+
+-- Create stored procedure sp_populate_company
+CREATE PROCEDURE [dbo].[sp_populate_company]
+AS
+BEGIN
+    -- Truncate the table
+    TRUNCATE TABLE company;
+
+    -- Insert new data into the table from the source
+    INSERT INTO company (Rank, [Name], [Industry], Revenue, [Profit], NumberOfEmployees, [Headquaters], [RevenuePerEmployee])
+    SELECT 
+        CAST([Rank] AS INT) AS Rank,
+        [Name],
+        [Industry],
+        ROUND(CAST(REPLACE(REPLACE(REPLACE(TRIM(Revenue), '.', ''), ',', ''), '$', '') AS FLOAT) / 1000, 0) AS Revenue,
+        TRY_CAST(
+            CASE
+                WHEN REPLACE(REPLACE(REPLACE(TRIM([Profit]), '.', ''), ',', ''), '$', '') = '' THEN NULL
+                ELSE REPLACE(REPLACE(REPLACE(TRIM([Profit]), '.', ''), ',', ''), '$', '')
+            END
+            AS INT
+        ) / 1000 AS [Profit],
+        CAST(REPLACE(TRIM([Employees]), ',', '') AS INT) AS NumberOfEmployees,
+        [Headquaters],
+        CAST(REPLACE(REPLACE(TRIM([RevenuePerEmployee]), ',', ''), '$', '') AS FLOAT) AS [RevenuePerEmployee]
+    FROM [dbo].[company_stage];
+
+END;
